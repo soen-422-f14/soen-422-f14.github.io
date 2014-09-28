@@ -295,7 +295,7 @@ OCR0A = 128;
   * To enable global interrupts use ``sei()`` and to disable global interrupts use ``cli()``.
 
 ```c++
-// Enable Timer/Counter register overflow interrupts on Timer 1
+// Enable Timer/Counter register overflow interrupts on Timer 0
 TIMSK0 |= (1 &lt;&lt; TOIE0);
 
 // Enable Interrupts (Global Interrupt Mask)
@@ -361,6 +361,9 @@ if (ADCSRA &amp; (1 &lt;&lt; ADIF)) {
 } else {
   // The value is not ready yet, keep waiting.
 }
+
+// Reset interrupt flag.
+ADCSRA |= (1 &lt;&lt; ADIF);
 ```
 
 ---
@@ -377,7 +380,7 @@ if (ADCSRA &amp; (1 &lt;&lt; ADIF)) {
 
 * Three key functions:
   * ``usb_init()``: Initialize the usb serial library.
-  * ``serial_write()``: Write serial data through the usb connection.
+  * ``usb_serial_write()``: Write serial data through the usb connection.
   * ``usb_serial_getchar()``: Reads one byte from the input buffer.
 
 ---
