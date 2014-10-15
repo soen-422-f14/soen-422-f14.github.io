@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>tutorial_4</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+      @import url(http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle
+
+# SOEN 422
+## Tutorial 4
+
+---
+
+# Installing Adafruit_BBIO Python Libraries
+
+* Adafruit_BBIO is a high level Python library for manipulating GPIO pins on the Beaglebone Black, much like the Arduino libraries.
+
+* First, you may need to make sure the system time is correct:
+
+```Bash
+sudo ntpdate pool.ntp.org
+```
+
+* Next, we need to install python and its dependencies:
+
+```Bash
+sudo apt-get update
+sudo apt-get install build-essential
+  python-dev python-setuptools python-pip python-smbus -y
+```
+
+* Finally, use ``pip`` to install the library:
+
+```bash
+sudo pip install Adafruit_BBIO
+```
+
+---
+
+# Importing Adafruit_BBIO
+
+* There are three main packages, one general IO, one for PWM, and one for ADC:
+
+```Python
+import Adafruit_BBIO.GPIO as GPIO
+import Adafruit_BBIO.PWM as PWM
+import Adafruit_BBIO.ADC as ADC
+```
+
+* To run your python script:
+
+```bash
+python yourPythonScript.py
+```
+
+---
+
+# Installing Bonescript Library
+
+* Bonescript is a Node.js library which also allows you to use a high level API from a Javascript environment.
+
+* First, you must install dependencies, Node.js and NPM, the Node Package Manager.
+
+```bash
+sudo apt-get install -y build-essential g++ curl libssl-dev
+  apache2-utils git libxml2-dev
+sudo apt-get install nodejs-legacy npm -y
+```
+
+* Now we can install Bonescript globally using NPM.
+
+```bash
+sudo npm install -g bonescript
+```
+
+---
+
+# Importing Bonescript
+
+* To import Bonescript:
+
+```Bash
+var b = require('bonescript');
+```
+
+* To run your Javascript program:
+
+```Bash
+node yourJavascript.js
+```
+
+---
+
+# Linux Devices
+
+* On Linux, all devices are exposed as virtual files through the file system.
+
+* Beginning in Linux kernel 3.8, hardware devices and IO pins are defined through a data structure called the device tree which is loaded at boot time.
+
+  * The device tree describes the hardware which is available and maps them onto a virtual file system.
+
+* The device tree can be altered after booting by loading a device tree overlay which is a segment of this data structure with redefinitions to change mux modes and enable/disable devices.
+
+---
+
+# Digital Output
+
+* Most GPIO pins can be used for digital io when in mux mode 7 (see tables at [Derek Molloy's Website](http://derekmolloy.ie/beaglebone/beaglebone-gpio-programming-on-arm-embedded-linux/)).
+
+* First the pin must be exported to indicate to the OS that you wish to use it. You must write the pin number used to the export file.
+
+---
+
+# Digital Output
+
+Bash
+
+```bash
+echo 67 &gt; /sys/class/gpio/export
+```
+
+C
+
+```c
+#include &lt;stdio.h&gt;
+
+// Open the export file
+FILE *exportFile;
+exportFile = fopen(&quot;/sys/class/gpio/export&quot;, &quot;w&quot;);
+
+// Write the pin that we want to use to the file:
+fprintf(exportFile, &quot;67&quot;);
+
+// Close the file
+fclose(exportFile);
+```
+
+---
+
+# Digital Output
+
+* Next, we must the data direction
+
+Bash
+
+```bash
+echo out &gt;&gt; /sys/class/gpio/gpio67/direction
+```
+
+C
+
+```C
+// Open the Pin 67 Data Direction File
+FILE *dataDirection67;
+dataDirection67 = fopen(&quot;/sys/class/gpio/gpio67/direction&quot;, &quot;w&quot;);
+
+// Write the direction as output to the file:
+fprintf(dataDirection67, &quot;out&quot;);
+
+// Close the file.
+fclose(dataDirection67);
+```
+
+---
+
+# Digital Output
+
+* Finally, we must write the value to output.
+
+Bash
+
+```bash
+echo 1 &gt;&gt; /sys/class/gpio/gpio67/value
+```
+
+C
+
+```C
+// Open the Pin 67 value file
+FILE *value67;
+value67 = fopen(&quot;/sys/class/gpio/gpio67/value&quot;, &quot;w&quot;);
+
+// Write the direction as HIGH (1), for LOW, use 0.
+fprintf(value67, &quot;1&quot;);
+
+// Close the file.
+fclose(value67);
+```
+
+---
+
+# Digital Output
+
+* With the Python library:
+
+```Python
+import Adafruit_BBIO.GPIO as GPIO
+
+GPIO.setup(&quot;P8_10&quot;, GPIO.OUT)
+GPIO.output(&quot;P8_10&quot;, GPIO.HIGH)
+GPIO.cleanup()
+```
+
+---
+
+# Digital Output
+
+* With Bonescript:
+
+```Javascript
+var b = require('bonescript');
+
+b.pinMode('P8_13', b.OUTPUT);
+
+b.digitalWrite('P8_13', b.HIGH);
+```
+
+---
+
+# Digital Input
+
+* The procedure is the same as for output, except for direction, we write &quot;in&quot; to the direction file, and we read the value file for the pin's value.
+
+Bash
+
+```Bash
+cat /sys/class/gpio/gpio67/value
+```
+
+C
+
+```C
+// Open the Pin 67 value file
+FILE *value67;
+value67 = fopen(&quot;/sys/class/gpio/gpio67/value&quot;, &quot;r&quot;);
+
+// Write the direction as HIGH (1), for LOW, use 0.
+char ch = fgetc(value67);
+
+// Close the file.
+fclose(value67);
+```
+
+---
+
+# Digital Input
+
+* With the Python library:
+
+```Python
+import Adafruit_BBIO.GPIO as GPIO
+
+GPIO.setup(&quot;P8_14&quot;, GPIO.IN)
+
+if GPIO.input(&quot;P8_14&quot;):
+    print(&quot;HIGH&quot;)
+else:
+    print(&quot;LOW&quot;)
+```
+
+---
+
+# Digital Input
+
+* With Bonescript:
+
+```Javascript
+var b = require('bonescript');
+
+b.pinMode('P8_19', b.INPUT);
+
+var callbackFunction = function (readvalue) {
+  //Do something with readvalue
+}
+
+b.digitalRead('P8_19', callbackFunction);
+```
+
+---
+
+# Analog Output
+
+* Analog Output is done in a similar fashion to Digital Output, except we must activate the PWM module and change the mux mode of a pin using a device tree overlay.
+
+Bash
+
+```Bash
+echo am33xx_pwm &gt; /sys/devices/bone_capemgr.9/slots
+echo bone_pwm_P9_14 &gt; /sys/devices/bone_capemgr.9/slots 
+```
+
+C
+
+```C
+FILE *slots;
+slots = fopen(&quot;/sys/devices/bone_capemgr.9/slots&quot;, &quot;w&quot;);
+
+// Activate the am33xx_pwm module
+fprintf(slots, &quot;am33xx_pwm&quot;);
+
+// Activate the pwm mux mode on P9_14
+fprintf(slots, &quot;bonw_pwm_P9_14&quot;);
+
+// Close the file.
+fclose(slots);
+```
+
+---
+
+# Analog Output
+
+* After activating the PWM module and setting the mux mode, a new directory should be available to manage the PWM of that pin.
+
+* There are a few files here of note:
+
+* ``period``: Contains the period of the PWM signal in nanoseconds.
+
+* ``duty``: The duty cycle: ie. if period is 500000 and duty is 250000, then duty cycle is 50%.
+
+* ``run``: 1 if the pwm is on, 0 otherwise
+  
+* ``polarity``: if 1: the signal starts at 3.3V for the duration of the duty, if 0: the signal starts at 0V and raises to 3.3V after the duration of the duty.
+
+---
+
+# Analog Output
+
+* An example of setting a 50% duty cycle:
+
+Bash
+
+```Bash
+echo 500000 &gt; period
+echo 250000 &gt; duty
+echo 1 &gt; run
+```
+
+C
+
+```C
+FILE *period;
+FILE *duty;
+FILE *run;
+
+period = fopen(&quot;/sys/devices/ocp.3/pwm_test_P9_14.16/period&quot;, &quot;w&quot;);
+duty = fopen(&quot;/sys/devices/ocp.3/pwm_test_P9_14.16/duty&quot;, &quot;w&quot;);
+run = fopen(&quot;/sys/devices/ocp.3/pwm_test_P9_14.16/run&quot;, &quot;w&quot;);
+
+fprintf(period, &quot;500000&quot;);
+fprintf(duty, &quot;250000&quot;);
+fprintf(run, &quot;1&quot;);
+
+fclose(period);
+fclose(duty);
+fclose(run);
+```
+
+---
+
+# Analog Output
+
+* With the Python library:
+
+```Python
+import Adafruit_BBIO.PWM as PWM
+
+# 50% duty cycle.
+PWM.start(&quot;P9_14&quot;, 50)
+```
+
+* Changing the duty cycle:
+
+```Python
+PWM.set_duty_cycle(&quot;P9_14&quot;, 25.5)
+```
+
+* Stopping PWM
+
+```Python
+PWM.stop(&quot;P9_14&quot;)
+PWM.cleanup()
+```
+
+---
+
+# Analog Output
+
+* With Bonescript:
+
+```Javascript
+var b = require('bonescript');
+
+//analogWrite(pin, dutyCycle, frequency, callback)
+// Frequency defaults to 2kHz, callback is optional.
+b.analogWrite('P9_14', 0.7)
+```
+
+---
+
+# Analog Input
+
+* The Beaglebone Black has 7 Analog Input pins: AIN0 - AIN7.
+  
+  * These are found on pins P9_33 and P9_35 - P9_40
+
+  * **NOTE: The max input voltage is 1.8 V**
+
+* First, we must activate the ADC device by loading a device tree overlay:
+
+Bash
+
+```Bash
+echo cape-bone-iio &gt; /sys/devices/bone_capemgr.9/slots
+```
+
+C
+
+```C
+FILE *slots;
+slots = fopen(&quot;/sys/devices/bone_capemgr.9/slots&quot;, &quot;w&quot;);
+
+// Activate the cape-bone-iio module
+fprintf(slots, &quot;cape-bone-iio&quot;);
+
+// Close the file.
+fclose(slots);
+```
+
+---
+
+# Analog Input
+
+* Now, we can read the value from any of the ADC pins:
+
+Bash
+
+```Bash
+cat /sys/devices/ocp.3/helper.15/AIN1
+```
+
+C
+
+```C
+FILE *AIN1;
+char line[20];
+
+AIN1 = fopen(&quot;/sys/devices/ocp.3/helper.15/AIN1&quot;, &quot;r&quot;);
+
+//Read the line from the file.
+fgets(line, 20, AIN1);
+
+// Close the file.
+fclose(AIN1);
+```
+
+---
+
+# Analog Input
+
+* With the Python library:
+
+```Python
+import Adafruit_BBIO.ADC as ADC
+
+ADC.setup()
+
+value = ADC.read(&quot;P9_40&quot;)
+
+# Also Valid:
+value = ADC.read(&quot;AIN1&quot;)
+```
+
+* **Note: There is a known bug where you may need to read values twice to get the latest value.**
+
+---
+
+# Analog Input
+
+* With Bonescript:
+
+```Javascript
+var b = require('bonescript');
+
+b.analogRead('P9_36', printStatus);
+
+function printStatus(readValue) {
+  // Do something with readValue
+}
+```
+
+---
+
+# References
+
+* [Derek Molloy](http://derekmolloy.ie/beaglebone/beaglebone-gpio-programming-on-arm-embedded-linux/)
+
+* [Adafruit](https://learn.adafruit.com/setting-up-io-python-library-on-beaglebone-black/installation-on-ubuntu)
+
+* [Bonescript](http://beagleboard.org/Support/BoneScript)
+
+---
+
+# Copyrights
+
+&lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;&lt;img alt=&quot;Creative Commons License&quot; style=&quot;border-width:0&quot; src=&quot;https://i.creativecommons.org/l/by-sa/4.0/88x31.png&quot; /&gt;&lt;/a&gt;&lt;br /&gt;This work is licensed under a &lt;a rel=&quot;license&quot; href=&quot;http://creativecommons.org/licenses/by-sa/4.0/&quot;&gt;Creative Commons Attribution-ShareAlike 4.0 International License&lt;/a&gt;.
+    </textarea>
+    <script src="http://gnab.github.io/remark/downloads/remark-latest.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
